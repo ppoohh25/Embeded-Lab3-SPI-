@@ -9,7 +9,7 @@ int z = 0;
 char t[100];
 
 void serial_begin() {
-  UBRR0 = 103;
+  UBRR0 = 31;
   UCSR0A = 0b00000000;
   UCSR0B = 0b10011000;  // Enable RXCIE Rx Interrupt
   UCSR0C = 0b00000110;
@@ -40,9 +40,13 @@ int main(void) {
     for (int i = 0; i < z; i++) {
       y[i] = t[i];
     }
-    z = 0; //Error 8th letter doesn't display on dotmatrix
-    max7219_dis(y, 500);
-    //max7219_scr(y,"l",50);
+    z = 0;
+    //max7219_dis(y, 500);
+    max7219_scr(y,"l",50);
     //max7219_scr(y,"r",50);
+    for (int row = 0; row < 8; row++) {
+      const byte c[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        max7219_wr(row + 1, c[row]);
+      }
   }
 }
