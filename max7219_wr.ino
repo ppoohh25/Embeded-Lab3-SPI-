@@ -399,6 +399,33 @@ const byte Num[][8] = {
     0B00111100 }
 };
 
+unsigned char reverse8(unsigned char num) {
+  unsigned char reversed = 0;
+
+  // Iterate through each bit of the input number
+  for (int i = 0; i < 8; i++) {
+    // Extract the least significant bit of 'num' and append it to 'reversed'
+    reversed = (reversed << 1) | (num & 1);
+    // Right shift 'num' to get the next bit
+    num >>= 1;
+  }
+
+  return reversed;
+}
+
+void reverseString(char str[]) {
+  int length = strlen(str);
+  int i, j;
+  char temp;
+
+  for (i = 0, j = length - 1; i < j; i++, j--) {
+    // Swap characters at position i and j
+    temp = str[i];
+    str[i] = str[j];
+    str[j] = temp;
+  }
+}
+
 void max7219_wr(char addr, char data) {
   PORTB = PORTB & 0b11111011;  //ss = 0
   spi_putc(addr);
@@ -414,166 +441,290 @@ void max7219_set(char Decode_mode, char Intensity, char Scan_limit) {
   max7219_wr(0b00001100, 0b00000001);   //start
 }
 
+//--------------------------display each charlecter-----------------------
 void max7219_dis(char text[], int delay) {
-  //Serial.println(strlen(text));
   for (int i = 0; i < strlen(text); i++) {
-    //Serial.println((int)text[i]);
     if (text[i] >= 65 && text[i] <= 90) {
       int a = (int)text[i] - 65;
       Serial.println(a);
-      max7219_wr(0b00000001, CapLetter[a][0]);
-      max7219_wr(0b00000010, CapLetter[a][1]);
-      max7219_wr(0b00000011, CapLetter[a][2]);
-      max7219_wr(0b00000100, CapLetter[a][3]);
-      max7219_wr(0b00000101, CapLetter[a][4]);
-      max7219_wr(0b00000110, CapLetter[a][5]);
-      max7219_wr(0b00000111, CapLetter[a][6]);
-      max7219_wr(0b00001000, CapLetter[a][7]);
+      for (int row = 0; row < 8; row++) {
+        max7219_wr(row + 1, CapLetter[a][row]);
+      }
       _delay_ms(delay);
     } else if (text[i] >= 97 && text[i] <= 122) {
       int a = (int)text[i] - 97;
-      Serial.println(a);
-      max7219_wr(0b00000001, SmallLetter[a][0]);
-      max7219_wr(0b00000010, SmallLetter[a][1]);
-      max7219_wr(0b00000011, SmallLetter[a][2]);
-      max7219_wr(0b00000100, SmallLetter[a][3]);
-      max7219_wr(0b00000101, SmallLetter[a][4]);
-      max7219_wr(0b00000110, SmallLetter[a][5]);
-      max7219_wr(0b00000111, SmallLetter[a][6]);
-      max7219_wr(0b00001000, SmallLetter[a][7]);
+      for (int row = 0; row < 8; row++) {
+        max7219_wr(row + 1, SmallLetter[a][row]);
+      }
       _delay_ms(delay);
     } else if (text[i] >= 48 && text[i] <= 57) {
       int a = (int)text[i] - 48;
-      Serial.println(a);
-      max7219_wr(0b00000001, Num[a][0]);
-      max7219_wr(0b00000010, Num[a][1]);
-      max7219_wr(0b00000011, Num[a][2]);
-      max7219_wr(0b00000100, Num[a][3]);
-      max7219_wr(0b00000101, Num[a][4]);
-      max7219_wr(0b00000110, Num[a][5]);
-      max7219_wr(0b00000111, Num[a][6]);
-      max7219_wr(0b00001000, Num[a][7]);
+      for (int row = 0; row < 8; row++) {
+        max7219_wr(row + 1, Num[a][row]);
+      }
       _delay_ms(delay);
+    }
+    if (text[i] == text[i + 1]) {
+      for (int row = 0; row < 8; row++) {
+        max7219_wr(row + 1, c[row]);
+      }
+      _delay_ms(200);
     }
   }
 }
+//------------------------------------------- End -----------------------------------------------------------
 
-void max7219_scr(char text[], int speed) {
-  for (int i = 0; i < strlen(text) - 1; i++) {
-    if (text[i] >= 65 && text[i] <= 90) {
-      for (int j = 0; j <= 7; j++) {
-        if (i == 0) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] >> (7 - j)));
+//-------------------------------------------- Scroll led --------------------------------------------------
+
+void max7219_scr(char text[], char direction[1], int speed) {
+  //---------------------------------------- Scroll left--------------------------------------------------
+  if (direction[0] == 76 || direction[0] == 108) {
+    for (int i = 0; i < strlen(text) - 1; i++) {
+      if (text[i] >= 65 && text[i] <= 90) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] >> (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
-          if (j != 7) {
-            _delay_ms(speed);
+        }
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
       }
-      for (int j = 0; j <= 7; j++) {
-        if (text[i + 1] >= 65 && text[i + 1] <= 90) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
-          }
-        }
-        if (text[i + 1] >= 97 && text[i + 1] <= 122) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
+
+      else if (text[i] >= 97 && text[i] <= 122) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] >> (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
-        if (text[i + 1] >= 48 && text[i + 1] <= 57) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
-          if (j != 7) {
-            _delay_ms(speed);
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
+      }
+
+      else if (text[i] >= 48 && text[i] <= 57) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] >> (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+        }
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+        }
+      }
+      if (i == strlen(text) - 2) {
+        _delay_ms(500);
       }
     }
+  }
+  //------------------------------------- End scroll left---------------------------------------------------------
 
-    else if (text[i] >= 97 && text[i] <= 122) {
-      for (int j = 0; j <= 7; j++) {
-        if (i == 0) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] >> (7 - j)));
+  //--------------------------------------- Scroll right -----------------------------------------------------------
+  if (direction[0] == 82 || direction[0] == 114) {
+    reverseString(text);
+    for (int i = 0; i < strlen(text) - 1; i++) {
+      if (text[i] >= 65 && text[i] <= 90) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] << (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
-          if (j != 7) {
-            _delay_ms(speed);
+        }
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] >> j) | CapLetter[(int)text[i + 1] - 65][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] >> j) | SmallLetter[(int)text[i + 1] - 97][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (CapLetter[(int)text[i] - 65][row] >> j) | Num[(int)text[i + 1] - 48][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
       }
-      for (int j = 0; j <= 7; j++) {
-        if (text[i + 1] >= 65 && text[i + 1] <= 90) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
-          }
-        }
-        if (text[i + 1] >= 97 && text[i + 1] <= 122) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
-          }
-        }
-        if (text[i + 1] >= 48 && text[i + 1] <= 57) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
-          }
-        }
-      }
-    }
 
-    else if (text[i] >= 48 && text[i] <= 57) {
-      for (int j = 0; j <= 7; j++) {
-        if (i == 0) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (Num[(int)text[i] - 48][row] >> (7 - j)));
+      else if (text[i] >= 97 && text[i] <= 122) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] << (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
-          if (j != 7) {
-            _delay_ms(speed);
+        }
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] >> j) | CapLetter[(int)text[i + 1] - 65][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] >> j) | SmallLetter[(int)text[i + 1] - 97][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (SmallLetter[(int)text[i] - 97][row] >> j) | Num[(int)text[i + 1] - 48][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
       }
-      for (int j = 0; j <= 7; j++) {
-        if (text[i + 1] >= 65 && text[i + 1] <= 90) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | CapLetter[(int)text[i + 1] - 65][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
-          }
-        }
-        if (text[i + 1] >= 97 && text[i + 1] <= 122) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | SmallLetter[(int)text[i + 1] - 97][row] >> (8 - (j + 1)));
-          }
-          if (j != 7) {
-            _delay_ms(speed);
+
+      else if (text[i] >= 48 && text[i] <= 57) {
+        for (int j = 0; j <= 7; j++) {
+          if (i == 0) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << (7 - j)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
-        if (text[i + 1] >= 48 && text[i + 1] <= 57) {
-          for (int row = 0; row < 8; row++) {
-            max7219_wr(row + 1, (Num[(int)text[i] - 48][row] << j) | Num[(int)text[i + 1] - 48][row] >> (8 - (j + 1)));
+        for (int j = 0; j <= 7; j++) {
+          if (text[i + 1] >= 65 && text[i + 1] <= 90) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] >> j) | CapLetter[(int)text[i + 1] - 65][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
-          if (j != 7) {
-            _delay_ms(speed);
+          if (text[i + 1] >= 97 && text[i + 1] <= 122) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] >> j) | SmallLetter[(int)text[i + 1] - 97][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
+          }
+          if (text[i + 1] >= 48 && text[i + 1] <= 57) {
+            for (int row = 0; row < 8; row++) {
+              max7219_wr(row + 1, (Num[(int)text[i] - 48][row] >> j) | Num[(int)text[i + 1] - 48][row] << (8 - (j + 1)));
+            }
+            if (j != 7) {
+              _delay_ms(speed);
+            }
           }
         }
+      }
+      if (i == strlen(text) - 2) {
+        _delay_ms(500);
       }
     }
   }
