@@ -1,3 +1,4 @@
+char tick = 0;
 const byte c[] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 const byte Sign[5][8] = {
@@ -399,6 +400,9 @@ const byte Num[][8] = {
     0B00111100 }
 };
 
+
+//char[] = "HELLO I AM";
+
 unsigned char reverse8(unsigned char num) {
   unsigned char reversed = 0;
 
@@ -446,7 +450,6 @@ void max7219_dis(char text[], int delay) {
   for (int i = 0; i < strlen(text); i++) {
     if (text[i] >= 65 && text[i] <= 90) {
       int a = (int)text[i] - 65;
-      Serial.println(a);
       for (int row = 0; row < 8; row++) {
         max7219_wr(row + 1, CapLetter[a][row]);
       }
@@ -479,6 +482,10 @@ void max7219_dis(char text[], int delay) {
 void max7219_scr(char text[], char direction[1], int speed) {
   //---------------------------------------- Scroll left--------------------------------------------------
   if (direction[0] == 76 || direction[0] == 108) {
+    if (tick == 1) {
+      reverseString(text);
+      tick = 0;
+    }
     for (int i = 0; i < strlen(text) - 1; i++) {
       if (text[i] >= 65 && text[i] <= 90) {
         for (int j = 0; j <= 7; j++) {
@@ -605,7 +612,12 @@ void max7219_scr(char text[], char direction[1], int speed) {
 
   //--------------------------------------- Scroll right -----------------------------------------------------------
   if (direction[0] == 82 || direction[0] == 114) {
-    reverseString(text);
+    if (tick == 0) {
+      reverseString(text);
+      tick = 1;
+    }
+
+
     for (int i = 0; i < strlen(text) - 1; i++) {
       if (text[i] >= 65 && text[i] <= 90) {
         for (int j = 0; j <= 7; j++) {
