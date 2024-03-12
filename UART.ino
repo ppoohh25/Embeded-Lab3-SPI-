@@ -21,6 +21,5 @@ char serial_getc(){
 ISR(UART_RX_vect) {
   t[z] = UDR0;
   serial_putc(t[z]);
-  serial_puts("\n");
   z += 1;
 }
