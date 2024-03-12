@@ -21,7 +21,7 @@ int main(void){
   spi_init();
   max7219_set(0,0b00001001,0b00000111);
   while(1){
-    //max7219_dis("Sadayu65011070",1000);
-    max7219_scr("Sadayu65011070",100);
+    //max7219_dis("Sadayu65011070",500);
+    max7219_scr("Sadayu65011070","r",200);
   }
 }
